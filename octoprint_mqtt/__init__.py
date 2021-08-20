@@ -58,6 +58,8 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
 
         self.lastTemp = {}
 
+        self.printerActive = False
+
     def initialize(self):
         self._printer.register_callback(self)
 
@@ -126,6 +128,9 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
                 temperatureActive=True,
                 temperatureThreshold=0.1,
 
+                stateTopic="state",
+                stateTopicActive=True,
+
                 lwTopic="mqtt",
                 lwActive=True
             ),
@@ -172,6 +177,16 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
         elif event == Events.FILE_DESELECTED:
             self.on_print_progress("", "", 0)
 
+        sendStateUpdate = False
+        if event == Events.PRINT_STARTED or event == Events.PRINT_RESUMED:
+            self.printerActive = True
+            sendStateUpdate = True
+        elif event == Events.PRINT_FAILED or event == Events.PRINT_DONE or event == Events.PRINT_CANCELLED or event == Events.PRINT_PAUSED:
+            self.printerActive = False
+            sendStateUpdate = True
+        if sendStateUpdate:
+            self.on_state_update(event)
+
         topic = self._get_topic("event")
 
         if topic:
@@ -182,6 +197,15 @@ class MqttPlugin(octoprint.plugin.SettingsPlugin,
                     data = dict(payload)
                 data["_event"] = event
                 self.mqtt_publish_with_timestamp(topic.format(event=event), data)
+
+    def on_state_update(self, event):
+        topic = self._get_topic("state")
+
+        if topic:
+            data = dict(printerActive=self.printerActive,
+                        currentState=event)
+
+            self.mqtt_publish_with_timestamp(topic, data, retained=True)
 
     ##~~ ProgressPlugin API
 

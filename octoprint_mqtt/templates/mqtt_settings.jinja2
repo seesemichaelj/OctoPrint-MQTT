@@ -244,6 +244,11 @@
                 <div class="control-group">
                     <div class="controls">
                         <label class="checkbox">
+                            <input type="checkbox" data-bind="checked:  settings.publish.stateActive" /> {{ _('Activate state messages') }}
+                        </label>
+                    </div>
+                    <div class="controls">
+                        <label class="checkbox">
                             <input type="checkbox" data-bind="checked:  settings.publish.progressActive" /> {{ _('Activate progress messages') }}
                         </label>
                     </div>
